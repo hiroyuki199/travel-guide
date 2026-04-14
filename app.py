@@ -24,7 +24,10 @@ def callback():
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image(event):
     message_content = line_bot_api.get_message_content(event.message.id)
-    image_data = base64.b64encode(message_content.content).decode('utf-8')
+    image_bytes = b''
+    for chunk in message_content.iter_content():
+        image_bytes += chunk
+    image_data = base64.b64encode(image_bytes).decode('utf-8')
 
     response = claude.messages.create(
         model="claude-opus-4-6",
