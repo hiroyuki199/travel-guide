@@ -23,29 +23,30 @@ def callback():
 
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image(event):
-    message_content = line_bot_api.get_message_content(event.message.id)
-    image_bytes = b''
-    for chunk in message_content.iter_content():
-        image_bytes += chunk
-    image_data = base64.b64encode(image_bytes).decode('utf-8')
+    try:
+        message_content = line_bot_api.get_message_content(event.message.id)
+        image_bytes = b''
+        for chunk in message_content.iter_content():
+            image_bytes += chunk
+        image_data = base64.b64encode(image_bytes).decode('utf-8')
 
-    response = claude.messages.create(
-        model="claude-opus-4-6",
-        max_tokens=1024,
-        messages=[{
-            "role": "user",
-            "content": [
-                {
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": "image/jpeg",
-                        "data": image_data
-                    }
-                },
-                {
-                    "type": "text",
-                    "text": """この画像に写っている観光地について日本語で教えてください。
+        response = claude.messages.create(
+            model="claude-opus-4-6",
+            max_tokens=1024,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/jpeg",
+                            "data": image_data
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": """この画像に写っている観光地について日本語で教えてください。
 以下の形式で回答してください：
 
 📍 場所名：
@@ -55,16 +56,23 @@ def handle_image(event):
 ・
 ・
 🎯 訪問のベストシーズン："""
-                }
-            ]
-        }]
-    )
+                    }
+                ]
+            }]
+        )
 
-    reply_text = response.content[0].text
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=reply_text)
-    )
+        reply_text = response.content[0].text
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+    except Exception as e:
+        print(f"エラー: {e}")
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=f"エラーが発生しました: {str(e)}")
+        )
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
